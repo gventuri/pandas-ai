@@ -88,10 +88,9 @@ class LLM:
         match = re.search(rf"{START_CODE_TAG}(.*){END_CODE_TAG}", code, re.DOTALL)
         if match:
             code = match.group(1).strip()
-        code = self._polish_code(code)
         if not self._is_python_code(code):
             raise NoCodeFoundError("No code found in the response")
-
+        code = self._polish_code(code)
         return code
 
     def call(self, instruction: str, value: str) -> None:

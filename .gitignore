@@ -11,3 +11,11 @@ __pycache__
 build
 dist
 pandasai.egg-info
+
+
+# virtualenv
+env
+ENV
+
+# test script
+test.py

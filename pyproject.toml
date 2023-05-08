@@ -13,6 +13,7 @@ python-dotenv = "^1.0.0"
 pandas = "^2.0.1"
 astor = "^0.8.1"
 openai = "^0.27.5"
+cohere = "^4.3.0"
 ipython = "^8.13.1"
 matplotlib = "^3.7.1"
 

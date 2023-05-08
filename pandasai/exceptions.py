@@ -44,3 +44,12 @@ class UnsupportedOpenAIModelError(Exception):
     Args:
         Exception (Exception): UnsupportedOpenAIModelError
     """
+
+
+class UnsupportedCohereModelError(Exception):
+    """
+    Raised when an unsupported Cohere model is used.
+
+    Args:
+        Exception (Exception): UnsupportedCohereModelError
+    """

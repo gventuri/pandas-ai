@@ -74,11 +74,11 @@ Make sure to prefix the requested python code with {START_CODE_TAG} exactly and 
     code_output: Optional[str] = None
 
     def __init__(
-        self,
-        llm=None,
-        conversational=True,
-        verbose=False,
-        enforce_privacy=False,
+            self,
+            llm=None,
+            conversational=True,
+            verbose=False,
+            enforce_privacy=False,
     ):
         if llm is None:
             raise LLMNotFoundError(
@@ -105,13 +105,13 @@ Make sure to prefix the requested python code with {START_CODE_TAG} exactly and 
         return self._llm.call(instruction, "")
 
     def run(
-        self,
-        data_frame: pd.DataFrame,
-        prompt: str,
-        is_conversational_answer: bool = None,
-        show_code: bool = False,
-        anonymize_df: bool = True,
-        use_error_correction_framework: bool = True,
+            self,
+            data_frame: pd.DataFrame,
+            prompt: str,
+            is_conversational_answer: bool = None,
+            show_code: bool = False,
+            anonymize_df: bool = True,
+            use_error_correction_framework: bool = True,
     ) -> str:
         """Run the LLM with the given prompt"""
         self.log(f"Running PandasAI with {self._llm.type} LLM...")
@@ -175,18 +175,33 @@ Code generated:
             node
             for node in tree.body
             if not (
-                isinstance(node, (ast.Import, ast.ImportFrom))
-                and any(alias.name not in WHITELISTED_LIBRARIES for alias in node.names)
+                    isinstance(node, (ast.Import, ast.ImportFrom))
+                    and any(alias.name not in WHITELISTED_LIBRARIES for alias in node.names)
             )
         ]
         new_tree = ast.Module(body=new_body)
         return astor.to_source(new_tree).strip()
 
+    def limit_context_dict(self, data_frame: pd.DataFrame):
+        """create the dictionary that has context about variables and allowed builtins"""
+        return {
+            "pd": pd,
+            "df": data_frame,
+            "__builtins__": {
+                "pd": pd,
+                "df": data_frame,
+                **{
+                    builtin: __builtins__[builtin]
+                    for builtin in WHITELISTED_BUILTINS
+                },
+            },
+        }
+
     def run_code(
-        self,
-        code: str,
-        data_frame: pd.DataFrame,
-        use_error_correction_framework: bool = True,
+            self,
+            code: str,
+            data_frame: pd.DataFrame,
+            use_error_correction_framework: bool = True,
     ) -> str:
         # pylint: disable=W0122 disable=W0123 disable=W0702:bare-except
         """Run the code in the current context and return the result"""
@@ -198,21 +213,7 @@ Code generated:
             code_to_run = self.remove_unsafe_imports(code)
             while count < self._max_retries:
                 try:
-                    exec(
-                        code_to_run,
-                        {
-                            "pd": pd,
-                            "df": data_frame,
-                            "__builtins__": {
-                                "pd": pd,
-                                "df": data_frame,
-                                **{
-                                    builtin: __builtins__[builtin]
-                                    for builtin in WHITELISTED_BUILTINS
-                                },
-                            },
-                        },
-                    )
+                    exec(code_to_run, self.limit_context_dict(data_frame))
                     code = code_to_run
                     break
                 except Exception as e:  # pylint: disable=W0718 disable=C0103
@@ -248,7 +249,7 @@ Code generated:
         if last_line.startswith("print(") and last_line.endswith(")"):
             last_line = last_line[6:-1]
         try:
-            return eval(last_line)
+            return eval(last_line,self.limit_context_dict(data_frame))
         except Exception:  # pylint: disable=W0718
             return captured_output
 

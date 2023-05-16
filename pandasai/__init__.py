@@ -8,16 +8,20 @@ from typing import Optional
 import astor
 import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from .constants import (
     END_CODE_TAG,
     START_CODE_TAG,
     WHITELISTED_BUILTINS,
     WHITELISTED_LIBRARIES,
+    PLOT_KEY_WORDS,
+    PLT_CODE,
 )
-from .exceptions import LLMNotFoundError
+from .exceptions import LLMNotFoundError, ExecutionFailed
 from .helpers.anonymizer import anonymize_dataframe_head
 from .helpers.notebook import Notebook
+from .helpers.plot import is_code_for_plots
 from .llm.base import LLM
 
 
@@ -76,11 +80,11 @@ Make sure to prefix the requested python code with {START_CODE_TAG} exactly and 
     code_output: Optional[str] = None
 
     def __init__(
-        self,
-        llm=None,
-        conversational=True,
-        verbose=False,
-        enforce_privacy=False,
+            self,
+            llm=None,
+            conversational=True,
+            verbose=False,
+            enforce_privacy=False,
     ):
         if llm is None:
             raise LLMNotFoundError(
@@ -107,13 +111,13 @@ Make sure to prefix the requested python code with {START_CODE_TAG} exactly and 
         return self._llm.call(instruction, "")
 
     def run(
-        self,
-        data_frame: pd.DataFrame,
-        prompt: str,
-        is_conversational_answer: bool = None,
-        show_code: bool = False,
-        anonymize_df: bool = True,
-        use_error_correction_framework: bool = True,
+            self,
+            data_frame: pd.DataFrame,
+            prompt: str,
+            is_conversational_answer: bool = None,
+            show_code: bool = False,
+            anonymize_df: bool = True,
+            use_error_correction_framework: bool = True,
     ) -> str:
         """Run the LLM with the given prompt"""
         self.log(f"Running PandasAI with {self._llm.type} LLM...")
@@ -177,18 +181,18 @@ Code generated:
             node
             for node in tree.body
             if not (
-                isinstance(node, (ast.Import, ast.ImportFrom))
-                and any(alias.name not in WHITELISTED_LIBRARIES for alias in node.names)
+                    isinstance(node, (ast.Import, ast.ImportFrom))
+                    and any(alias.name not in WHITELISTED_LIBRARIES for alias in node.names)
             )
         ]
         new_tree = ast.Module(body=new_body)
         return astor.to_source(new_tree).strip()
 
     def run_code(
-        self,
-        code: str,
-        data_frame: pd.DataFrame,
-        use_error_correction_framework: bool = True,
+            self,
+            code: str,
+            data_frame: pd.DataFrame,
+            use_error_correction_framework: bool = True,
     ) -> str:
         # pylint: disable=W0122 disable=W0123 disable=W0702:bare-except
         """Run the code in the current context and return the result"""
@@ -198,8 +202,11 @@ Code generated:
             # Execute the code
             count = 0
             code_to_run = self.remove_unsafe_imports(code)
+            _success_in_running_code = False
             while count < self._max_retries:
                 try:
+                    if is_code_for_plots(code_to_run,PLT_CODE, PLOT_KEY_WORDS):
+                        code_to_run += PLT_CODE
                     exec(
                         code_to_run,
                         {
@@ -215,6 +222,7 @@ Code generated:
                         },
                     )
                     code = code_to_run
+                    _success_in_running_code = True
                     break
                 except Exception as e:  # pylint: disable=W0718 disable=C0103
                     if not use_error_correction_framework:
@@ -225,7 +233,7 @@ Code generated:
                         self._error_correct_instruction.format(
                             today_date=date.today(),
                             code=code,
-                            error_returned=e,
+                            error_returned=repr(e),
                             START_CODE_TAG=START_CODE_TAG,
                             END_CODE_TAG=END_CODE_TAG,
                             question=self._original_instructions["question"],
@@ -241,11 +249,17 @@ Code generated:
                         error_correcting_instruction, ""
                     )
 
-        captured_output = output.getvalue()
+        if _success_in_running_code:
+            captured_output = output.getvalue()
+        else:
+            raise ExecutionFailed("The llm could not generate the correct code.")
 
         # Evaluate the last line and return its value or the captured output
         lines = code.strip().split("\n")
         last_line = lines[-1].strip()
+        if last_line.startswith("plt.show(") and last_line.endswith(")"):
+            self._is_conversational_answer = False
+            return "The required plot has been generated."
         if last_line.startswith("print(") and last_line.endswith(")"):
             last_line = last_line[6:-1]
         try:

@@ -7,6 +7,7 @@ END_CODE_TAG = "<endCode>"
 WHITELISTED_LIBRARIES = [
     "numpy",
     "matplotlib",
+    "pandas"
 ]
 WHITELISTED_BUILTINS = [
     "abs",
@@ -73,3 +74,5 @@ WHITELISTED_BUILTINS = [
     "vars",
     "zip",
 ]
+PLOT_KEY_WORDS = ["plot", "plt", "graph", "chart"]
+PLT_CODE = "\nplt.show()"

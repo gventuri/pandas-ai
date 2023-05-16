@@ -248,4 +248,5 @@ print(os.listdir())
 """
         pandasai._llm._output = malicious_code
         assert pandasai.remove_unsafe_imports(malicious_code) == "print(os.listdir())"
-        assert pandasai.run_code(malicious_code, pd.DataFrame()) == ""
+        with pytest.raises(Exception):
+            pandasai.run_code(malicious_code, pd.DataFrame())

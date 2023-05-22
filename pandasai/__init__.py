@@ -29,7 +29,7 @@ class PandasAI:
     _task_instruction: str = """
 Today is {today_date}.
 You are provided with a pandas dataframe (df) with {num_rows} rows and {num_columns} columns.
-This is the result of `print(df.head({rows_to_display}))`:
+This is the result of `print(df.head({rows_to_display}).to_markdown())`:
 {df_head}.
 
 When asked about the data, your response should include a python code that describes the dataframe `df`.
@@ -45,7 +45,7 @@ Rewrite the answer to the question in a conversational way.
     _error_correct_instruction: str = """
 Today is {today_date}.
 You are provided with a pandas dataframe (df) with {num_rows} rows and {num_columns} columns.
-This is the result of `print(df.head({rows_to_display}))`:
+This is the result of `print(df.head({rows_to_display}).to_markdown())`:
 {df_head}.
 
 The user asked the following question:
@@ -129,7 +129,7 @@ Make sure to prefix the requested python code with {START_CODE_TAG} exactly and 
         code = self._llm.generate_code(
             self._task_instruction.format(
                 today_date=date.today(),
-                df_head=df_head,
+                df_head=df_head.to_markdown(),
                 num_rows=data_frame.shape[0],
                 num_columns=data_frame.shape[1],
                 rows_to_display=rows_to_display,
@@ -140,7 +140,7 @@ Make sure to prefix the requested python code with {START_CODE_TAG} exactly and 
         )
         self._original_instructions = {
             "question": prompt,
-            "df_head": df_head,
+            "df_head": df_head.to_markdown(),
             "num_rows": data_frame.shape[0],
             "num_columns": data_frame.shape[1],
             "rows_to_display": rows_to_display,

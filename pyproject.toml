@@ -30,6 +30,8 @@ click = "^8.1.3"
 
 [tool.poetry.extras]
 google = ["google-generativeai"]
+googlesheets = ["google-auth", "google-api-python-client", "gspread-pandas"]
+
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "1.3.0"

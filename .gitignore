@@ -15,11 +15,18 @@ pandasai.egg-info
 
 #venv
 /venv
+<<<<<<< HEAD
+=======
 .venv
+>>>>>>> upstream/main
 
 # command line
 /pandasai_cli.egg-info
 
+
+
+
 # pycharm
 .idea/
 .idea
+

@@ -797,3 +797,8 @@ print('Hello', name)"""
             "a",
             "b",
         ]
+
+    def test_copy_to_clipboard(self, llm):
+        pandas_ai = PandasAI(llm)
+        pandas_ai.copy_to_clipboard("a")
+        assert pandas_ai.paste_from_clipboard() == "a"

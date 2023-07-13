@@ -67,10 +67,7 @@ class OpenAI(BaseOpenAI):
 
         self.openai_proxy = kwargs.get("openai_proxy") or os.getenv("OPENAI_PROXY")
         if self.openai_proxy:
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy
-            }
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}
 
         self._set_params(**kwargs)
 

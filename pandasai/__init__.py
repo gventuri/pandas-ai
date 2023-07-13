@@ -38,9 +38,10 @@ import ast
 import io
 import logging
 import re
-import sys
 import uuid
 import time
+import subprocess
+import sys
 from contextlib import redirect_stdout
 from typing import List, Optional, Union, Dict, Type
 import importlib.metadata
@@ -111,6 +112,7 @@ class PandasAI(Shortcuts):
         to None
         _cache (Cache, optional): Cache object to store the results. Default to None
         _enable_cache (bool, optional): Whether to enable cache. Default to True
+        _auto_copy_code (bool, optional): Whether to copy the code. Default to False
         _logger (logging.Logger, optional): Logger object to log the messages. Default
         to None
         _logs (List[dict], optional): List of logs to be stored. Default to []
@@ -148,6 +150,7 @@ class PandasAI(Shortcuts):
     }
     _cache: Cache = None
     _enable_cache: bool = True
+    _auto_copy_code: bool = False
     _prompt_id: Optional[str] = None
     _middlewares: List[Middleware] = [ChartsMiddleware()]
     _additional_dependencies: List[dict] = []
@@ -173,6 +176,7 @@ class PandasAI(Shortcuts):
         middlewares=None,
         custom_whitelisted_dependencies=None,
         enable_logging=True,
+        auto_copy_code=False,
         non_default_prompts: Optional[Dict[str, Type[Prompt]]] = None,
     ):
         """
@@ -228,6 +232,7 @@ class PandasAI(Shortcuts):
         self._save_charts = save_charts
         self._save_charts_path = save_charts_path
         self._process_id = str(uuid.uuid4())
+        self._auto_copy_code = auto_copy_code
         self._logs = []
 
         self._non_default_prompts = (
@@ -645,6 +650,11 @@ class PandasAI(Shortcuts):
 
         # Get the code to run removing unsafe imports and df overwrites
         code_to_run = self._clean_code(code)
+
+        # Copy the code to clipboard
+        if self._auto_copy_code:
+            self.copy_to_clipboard(code_to_run)
+
         self.last_code_executed = code_to_run
         self.log(
             f"""
@@ -712,6 +722,46 @@ Code running:
         """Log a message"""
         self._logger.info(message)
         self._logs.append(message)
+
+    def copy_to_clipboard(self, text: str):
+        """
+        Copy text to clipboard
+
+        Args:
+            text (str): Text to copy to clipboard
+        """
+        if sys.platform == "win32":
+            command = "echo " + text.strip() + "| clip"
+            subprocess.run(command, shell=True)
+        elif sys.platform == "darwin":
+            command = "echo " + text.strip() + "| pbcopy"
+            subprocess.run(command, shell=True)
+        elif sys.platform.startswith("linux"):
+            command = "echo " + text.strip() + "| xclip -selection clipboard"
+            subprocess.run(command, shell=True)
+        else:
+            raise Exception("Can't copy to clipboard, unsupported OS.")
+
+    def paste_from_clipboard(self) -> str:
+        """
+        Paste text from clipboard
+
+        Returns (str): Text from clipboard
+        """
+        if sys.platform == "win32":
+            command = 'powershell.exe -command "Get-Clipboard"'
+            result = subprocess.run(command, capture_output=True, text=True, shell=True)
+            return result.stdout.strip()
+        elif sys.platform == "darwin":
+            command = "pbpaste"
+            result = subprocess.run(command, capture_output=True, text=True, shell=True)
+            return result.stdout.strip()
+        elif sys.platform.startswith("linux"):
+            command = "xclip -selection clipboard -o"
+            result = subprocess.run(command, capture_output=True, text=True, shell=True)
+            return result.stdout.strip()
+        else:
+            raise Exception("Can't paste from clipboard, unsupported OS.")
 
     @property
     def logs(self) -> List[str]:

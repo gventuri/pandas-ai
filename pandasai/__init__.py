@@ -241,6 +241,7 @@ class PandasAI(Shortcuts):
         if self._enable_cache:
             self._cache = Cache()
 
+        self._middlewares = []
         if middlewares is not None:
             self.add_middlewares(*middlewares)
 
@@ -422,7 +423,7 @@ class PandasAI(Shortcuts):
             return (
                 "Unfortunately, I was not able to answer your question, "
                 "because of the following error:\n"
-                f"\n{exception}\n"
+                f"\n{exception}"
             )
 
     def add_middlewares(self, *middlewares: List[Middleware]):
@@ -492,6 +493,8 @@ class PandasAI(Shortcuts):
             module = node.module
 
         library = module.split(".")[0]
+
+        print("library", library)
 
         if library == "pandas":
             return

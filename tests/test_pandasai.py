@@ -377,7 +377,7 @@ print(df)
         assert result == (
             "Unfortunately, I was not able to answer your question, "
             "because of the following error:\n"
-            "\nNo code found in the answer.\n"
+            "\nNo code found in the answer."
         )
         assert pandasai.last_error == "No code found in the answer."
 
@@ -451,10 +451,26 @@ my_custom_library.do_something()
         pandasai._load_llm(langchain_llm)
         assert pandasai._llm._langchain_llm == langchain_llm
 
+    def test_additional_dependencies(self, pandasai):
+        assert pandasai._additional_dependencies == []
+        code = """from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import numpy as np"""
+        pandasai._clean_code(code)
+        assert pandasai._additional_dependencies == [
+            {"module": "matplotlib.figure", "name": "Figure", "alias": "Figure"},
+            {
+                "module": "matplotlib.pyplot",
+                "name": "matplotlib.pyplot",
+                "alias": "plt",
+            },
+            {"module": "numpy", "name": "numpy", "alias": "np"},
+        ]
+
     def test_get_environment(self, pandasai):
         pandasai._additional_dependencies = [
-            {"name": "pyplot", "alias": "plt", "module": "matplotlib"},
-            {"name": "numpy", "alias": "np", "module": "numpy"},
+            {"module": "matplotlib", "name": "pyplot", "alias": "plt"},
+            {"module": "numpy", "name": "numpy", "alias": "np"},
         ]
         assert pandasai._get_environment() == {
             "pd": pd,

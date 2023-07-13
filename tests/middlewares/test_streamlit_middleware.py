@@ -19,19 +19,19 @@ st.pyplot(plt.gcf())"""
         )
         assert middleware.has_run
 
-    def test_streamlit_middleware_optional_dependency(self, monkeypatch):
+    def test_streamlit_middleware_optional_dependency(self):
         """Test the streamlit middleware installs the optional dependency"""
 
         llm = FakeLLM("plt.show()")
-        pandasai = PandasAI(llm, middlewares=[StreamlitMiddleware()])
+        pandas_ai = PandasAI(llm, middlewares=[StreamlitMiddleware()])
 
         df = []
 
-        pandasai(
+        pandas_ai(
             df,
             "Plot the histogram of countries showing for each the gpd, using different"
             "colors for each bar",
         )
-        assert pandasai._additional_dependencies == [
+        assert pandas_ai._additional_dependencies == [
             {"module": "streamlit", "name": "streamlit", "alias": "st"}
         ]
